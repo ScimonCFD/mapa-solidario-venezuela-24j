@@ -52,23 +52,37 @@
               Estado
               <select name="state" required>
                 <option value="">Seleccionar</option>
-                <option>Distrito Capital</option>
-                <option>Miranda</option>
-                <option>La Guaira</option>
                 <option>Aragua</option>
                 <option>Carabobo</option>
+                <option>Distrito Capital</option>
+                <option>La Guaira</option>
                 <option>Lara</option>
-                <option>Zulia</option>
                 <option>Merida</option>
+                <option>Miranda</option>
                 <option>Tachira</option>
                 <option>Trujillo</option>
+                <option>Zulia</option>
                 <option>Otro</option>
               </select>
             </label>
 
             <label>
               Municipio / parroquia / sector
-              <input name="place" autocomplete="address-level3" required placeholder="Ej. Chacao, La Candelaria, Macuto">
+              <select name="place" required>
+                <option value="">Seleccionar</option>
+                <option>Barquisimeto</option>
+                <option>Caracas / La Candelaria</option>
+                <option>Chacao</option>
+                <option>Guarenas</option>
+                <option>Los Dos Caminos</option>
+                <option>Macuto</option>
+                <option>Maracaibo</option>
+                <option>Maracay</option>
+                <option>Merida</option>
+                <option>San Cristobal</option>
+                <option>Valencia</option>
+                <option>Otro / por confirmar</option>
+              </select>
             </label>
 
             <label>
@@ -76,19 +90,19 @@
               <select name="category" required>
                 <option>Agua</option>
                 <option>Alimentos</option>
-                <option>Medicinas</option>
                 <option>Atencion medica</option>
-                <option>Refugio</option>
-                <option>Higiene</option>
-                <option>Rescate</option>
-                <option>Transporte</option>
-                <option>Energia</option>
-                <option>Telecomunicaciones</option>
-                <option>Insumos para bebes</option>
                 <option>Adultos mayores</option>
-                <option>Mascotas</option>
-                <option>Remocion de escombros</option>
+                <option>Energia</option>
                 <option>Herramientas</option>
+                <option>Higiene</option>
+                <option>Insumos para bebes</option>
+                <option>Mascotas</option>
+                <option>Medicinas</option>
+                <option>Refugio</option>
+                <option>Remocion de escombros</option>
+                <option>Rescate</option>
+                <option>Telecomunicaciones</option>
+                <option>Transporte</option>
                 <option>Otro</option>
               </select>
             </label>
@@ -111,12 +125,39 @@
 
             <label>
               Descripcion verificable
-              <textarea name="description" rows="4" required placeholder="Que se necesita, para cuantas personas, y como se puede verificar."></textarea>
+              <textarea name="description" rows="4" required placeholder="Que se necesita y para cuantas personas. No incluir nombres, telefonos ni direcciones exactas."></textarea>
             </label>
 
             <label>
-              Contacto interno
-              <input name="contact" required placeholder="Telefono, WhatsApp, radio o responsable local">
+              Link de ubicacion aproximada
+              <input name="locationLink" inputmode="url" placeholder="Google Maps, WhatsApp location o referencia interna">
+            </label>
+
+            <div class="two-cols">
+              <label>
+                Nombre
+                <input name="firstName" autocomplete="given-name" placeholder="Solo interno">
+              </label>
+              <label>
+                Apellido
+                <input name="lastName" autocomplete="family-name" placeholder="Solo interno">
+              </label>
+            </div>
+
+            <div class="two-cols">
+              <label>
+                Cedula
+                <input name="nationalId" placeholder="Opcional, solo interno">
+              </label>
+              <label>
+                Telefono
+                <input name="phone" autocomplete="tel" required placeholder="Solo interno">
+              </label>
+            </div>
+
+            <label>
+              Notas internas de contacto
+              <input name="contact" placeholder="WhatsApp, radio, responsable local u otra referencia">
             </label>
 
             <button class="primary-action" type="submit">Crear reporte</button>
@@ -146,7 +187,7 @@
       <section class="view" id="verificacion">
         <div class="section-head">
           <h2>Cola de verificacion</h2>
-          <p>Solo voluntarios seleccionados deberian confirmar, descartar o enviar reportes a la base compartida.</p>
+          <p>Los reportes viven en la base interna. Solo al marcarlos como verificados pasan a la vista publica.</p>
         </div>
         <div class="toolbar">
           <input id="searchInput" placeholder="Buscar por zona, categoria o descripcion">
@@ -217,18 +258,18 @@
                 <option value="Todas">Todas las necesidades</option>
                 <option>Agua</option>
                 <option>Alimentos</option>
-                <option>Medicinas</option>
                 <option>Atencion medica</option>
-                <option>Refugio</option>
-                <option>Higiene</option>
-                <option>Rescate</option>
-                <option>Transporte</option>
-                <option>Energia</option>
-                <option>Telecomunicaciones</option>
-                <option>Insumos para bebes</option>
                 <option>Adultos mayores</option>
+                <option>Energia</option>
+                <option>Higiene</option>
+                <option>Insumos para bebes</option>
                 <option>Mascotas</option>
+                <option>Medicinas</option>
+                <option>Refugio</option>
                 <option>Remocion de escombros</option>
+                <option>Rescate</option>
+                <option>Telecomunicaciones</option>
+                <option>Transporte</option>
                 <option>Otro</option>
               </select>
               <button id="nearMeButton" type="button">Ver necesidades cerca de mi</button>

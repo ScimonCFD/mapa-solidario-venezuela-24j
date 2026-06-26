@@ -14,10 +14,17 @@ Capturar reportes estructurados con los datos minimos necesarios para verificarl
 4. Numero aproximado de personas afectadas
 5. Urgencia
 6. Descripcion breve
-7. Contacto de referencia
-8. Fuente o relacion con la situacion
-9. Evidencia opcional
-10. Consentimiento para uso interno de los datos
+7. Link de ubicacion aproximada
+8. Nombre
+9. Apellido
+10. Cedula opcional
+11. Telefono
+12. Notas internas de contacto
+13. Fuente o relacion con la situacion
+14. Evidencia opcional
+15. Consentimiento para uso interno de los datos
+
+Los campos de nombre, apellido, cedula, telefono, ubicacion exacta o link de ubicacion son internos. No deben aparecer en la vista publica.
 
 ## Opciones cerradas
 

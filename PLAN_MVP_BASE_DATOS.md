@@ -80,7 +80,12 @@ Excluido por ahora:
 - `quantity`
 - `priority`
 - `description_public`
+- `first_name_internal`
+- `last_name_internal`
+- `national_id_internal`: opcional
+- `phone_internal`
 - `contact_internal`
+- `location_link_internal`
 - `status`: pendiente, verificado, en_ruta, entregado, descartado
 - `created_by`
 - `verified_by`

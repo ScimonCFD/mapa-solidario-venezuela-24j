@@ -14,6 +14,11 @@ const seedReports = [
     priority: "Alta",
     description: "Edificio con adultos mayores sin suministro. Se requiere agua potable para 24 horas.",
     contact: "Contacto interno pendiente",
+    firstName: "",
+    lastName: "",
+    nationalId: "",
+    phone: "",
+    locationLink: "",
     channel: "WhatsApp",
     status: "En verificacion",
     evidence: "Mensaje reenviado, falta llamada.",
@@ -31,6 +36,11 @@ const seedReports = [
     priority: "Alta",
     description: "Pacientes cronicos requieren antihipertensivos e insulina. Confirmado por voluntario local.",
     contact: "Coordinacion medica interna",
+    firstName: "",
+    lastName: "",
+    nationalId: "",
+    phone: "",
+    locationLink: "",
     channel: "Llamada",
     status: "Verificado",
     evidence: "Llamada + foto de lista medica.",
@@ -118,6 +128,11 @@ needForm.addEventListener("submit", (event) => {
     priority: form.get("priority"),
     description: form.get("description").trim(),
     contact: form.get("contact").trim(),
+    firstName: form.get("firstName").trim(),
+    lastName: form.get("lastName").trim(),
+    nationalId: form.get("nationalId").trim(),
+    phone: form.get("phone").trim(),
+    locationLink: form.get("locationLink").trim(),
     channel: selectedChannel,
     status: "Recibido",
     evidence: "Sin verificacion todavia.",
@@ -159,7 +174,7 @@ clearPublicFilters.addEventListener("click", () => {
 nearMeButton.addEventListener("click", requestNearbyNeeds);
 
 document.querySelector("#exportCsv").addEventListener("click", () => {
-  const headers = ["id", "createdAt", "state", "place", "category", "quantity", "priority", "status", "channel", "description", "evidence", "verifiedBy"];
+  const headers = ["id", "createdAt", "state", "place", "category", "quantity", "priority", "status", "channel", "description", "firstName", "lastName", "nationalId", "phone", "contact", "locationLink", "evidence", "verifiedBy"];
   const rows = reports.map((report) => headers.map((key) => csvCell(report[key])).join(","));
   download("reportes_mapa_solidario.csv", [headers.join(","), ...rows].join("\n"), "text/csv");
 });
@@ -263,7 +278,11 @@ function renderPrivateRecord(report) {
       </div>
       <p><strong>Evidencia:</strong> ${escapeHtml(report.evidence)}</p>
       <p><strong>Verificador interno:</strong> ${escapeHtml(report.verifiedBy || "Pendiente por asignar")}</p>
-      <p><strong>Contacto interno:</strong> ${escapeHtml(report.contact)}</p>
+      <p><strong>Persona reportada:</strong> ${escapeHtml(personName(report) || "Sin nombre registrado")}</p>
+      <p><strong>Cedula:</strong> ${escapeHtml(report.nationalId || "No registrada")}</p>
+      <p><strong>Telefono:</strong> ${escapeHtml(report.phone || "No registrado")}</p>
+      <p><strong>Notas internas de contacto:</strong> ${escapeHtml(report.contact || "Sin notas")}</p>
+      <p><strong>Link de ubicacion:</strong> ${renderLocationLink(report.locationLink)}</p>
       <div class="record-actions">
         ${["Recibido", "En verificacion", "Verificado", "Asignado", "En ruta", "Entregado", "Cerrado", "Falso / duplicado"].map((status) => `
           <button data-id="${escapeHtml(report.id)}" data-status="${status}">${status}</button>
@@ -370,6 +389,21 @@ function toRadians(degrees) {
 
 function publicSummary(text) {
   return text.length > 135 ? `${text.slice(0, 132)}...` : text;
+}
+
+function personName(report) {
+  return `${report.firstName || ""} ${report.lastName || ""}`.trim();
+}
+
+function renderLocationLink(value) {
+  if (!value) {
+    return "No registrado";
+  }
+  const safeValue = escapeHtml(value);
+  if (/^https?:\/\//i.test(value)) {
+    return `<a href="${safeValue}" target="_blank" rel="noopener noreferrer">Abrir ubicacion</a>`;
+  }
+  return safeValue;
 }
 
 function load(key, fallback) {
