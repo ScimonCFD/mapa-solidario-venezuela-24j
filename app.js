@@ -90,6 +90,7 @@ const publicCategoryFilter = document.querySelector("#publicCategoryFilter");
 const nearMeButton = document.querySelector("#nearMeButton");
 const clearPublicFilters = document.querySelector("#clearPublicFilters");
 const geoStatus = document.querySelector("#geoStatus");
+const verificationNotice = document.querySelector("#verificationNotice");
 const stateSelect = document.querySelector("#stateSelect");
 const placeSelect = document.querySelector("#placeSelect");
 const parishSelect = document.querySelector("#parishSelect");
@@ -227,6 +228,13 @@ resourceForm.addEventListener("submit", (event) => {
 
 searchInput.addEventListener("input", renderVerification);
 statusFilter.addEventListener("change", renderVerification);
+verificationList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-status]");
+  if (!button) {
+    return;
+  }
+  updateStatus(button.dataset.id, button.dataset.status);
+});
 publicSearchInput.addEventListener("input", renderPublic);
 publicCategoryFilter.addEventListener("change", renderPublic);
 clearPublicFilters.addEventListener("click", () => {
@@ -332,10 +340,6 @@ function renderVerification() {
   verificationList.innerHTML = filtered.length
     ? filtered.map(renderPrivateRecord).join("")
     : `<div class="empty">No hay reportes con ese filtro.</div>`;
-
-  verificationList.querySelectorAll("[data-status]").forEach((button) => {
-    button.addEventListener("click", () => updateStatus(button.dataset.id, button.dataset.status));
-  });
 }
 
 function renderPublic() {
@@ -403,7 +407,7 @@ function renderPrivateRecord(report) {
       <p><strong>Link de ubicacion:</strong> ${renderLocationLink(report.locationLink)}</p>
       <div class="record-actions">
         ${["Recibido", "En verificacion", "Verificado", "Asignado", "En ruta", "Entregado", "Cerrado", "Falso / duplicado"].map((status) => `
-          <button data-id="${escapeHtml(report.id)}" data-status="${status}">${status}</button>
+          <button type="button" class="${status === report.status ? "current" : ""}" data-id="${escapeHtml(report.id)}" data-status="${status}">${status}</button>
         `).join("")}
       </div>
     </article>
@@ -430,14 +434,22 @@ function renderPublicRecord(report) {
 }
 
 function updateStatus(id, status) {
+  let updatedReport = null;
   reports = reports.map((report) => {
     if (report.id !== id) {
       return report;
     }
     const coords = approximateCoords(report);
-    return { ...report, ...coords, status };
+    updatedReport = { ...report, ...coords, status };
+    return updatedReport;
   });
   save(STORAGE_KEYS.reports, reports);
+  if (updatedReport) {
+    const publicMessage = ["Verificado", "En ruta", "Entregado"].includes(status)
+      ? " Ya aparece en la vista publica."
+      : " Sigue siendo solo interno.";
+    verificationNotice.textContent = `${updatedReport.id} marcado como "${status}".${publicMessage}`;
+  }
   render();
 }
 

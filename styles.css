@@ -232,6 +232,21 @@ textarea {
   margin-bottom: 16px;
 }
 
+.notice {
+  display: none;
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+  background: #e8f4ec;
+  color: #214f3a;
+  font-weight: 800;
+  margin-bottom: 14px;
+  padding: 11px 12px;
+}
+
+.notice:not(:empty) {
+  display: block;
+}
+
 .records {
   display: grid;
   gap: 12px;
@@ -313,6 +328,13 @@ textarea {
   background: #fff;
   min-height: 38px;
   padding: 8px 10px;
+}
+
+.record-actions button.current {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+  font-weight: 800;
 }
 
 .public-layout {
