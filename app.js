@@ -8,7 +8,8 @@ const seedReports = [
     id: "R-2401",
     createdAt: new Date().toISOString(),
     state: "Distrito Capital",
-    place: "La Candelaria",
+    place: "Libertador",
+    parish: "La Candelaria",
     category: "Agua",
     quantity: 80,
     priority: "Alta",
@@ -30,7 +31,8 @@ const seedReports = [
     id: "R-2402",
     createdAt: new Date().toISOString(),
     state: "Miranda",
-    place: "Guarenas",
+    place: "Plaza",
+    parish: "Guarenas",
     category: "Medicinas",
     quantity: 12,
     priority: "Alta",
@@ -90,6 +92,7 @@ const clearPublicFilters = document.querySelector("#clearPublicFilters");
 const geoStatus = document.querySelector("#geoStatus");
 const stateSelect = document.querySelector("#stateSelect");
 const placeSelect = document.querySelector("#placeSelect");
+const parishSelect = document.querySelector("#parishSelect");
 
 const APPROXIMATE_COORDS = [
   { match: ["distrito capital", "caracas", "la candelaria"], lat: 10.5061, lng: -66.9146 },
@@ -132,11 +135,35 @@ const MUNICIPALITIES_BY_STATE = {
   Zulia: ["Almirante Padilla", "Baralt", "Cabimas", "Catatumbo", "Colon", "Francisco Javier Pulgar", "Guajira", "Jesus Enrique Lossada", "Jesus Maria Semprun", "La Cañada de Urdaneta", "Lagunillas", "Machiques de Perija", "Mara", "Maracaibo", "Miranda", "Rosario de Perija", "San Francisco", "Santa Rita", "Simon Bolivar", "Sucre", "Valmore Rodriguez"],
 };
 
+const PARISHES_BY_STATE_MUNICIPALITY = {
+  "Distrito Capital|Libertador": ["Altagracia", "Antimano", "Catedral", "Coche", "El Junquito", "El Paraiso", "El Recreo", "El Valle", "La Candelaria", "La Pastora", "La Vega", "Macarao", "San Agustin", "San Bernardino", "San Jose", "San Juan", "San Pedro", "Santa Rosalia", "Santa Teresa", "Sucre", "23 de Enero"],
+  "Miranda|Baruta": ["Baruta", "El Cafetal", "Las Minas de Baruta"],
+  "Miranda|Chacao": ["Chacao"],
+  "Miranda|El Hatillo": ["El Hatillo"],
+  "Miranda|Plaza": ["Guarenas"],
+  "Miranda|Sucre": ["Caucaguita", "Filas de Mariche", "La Dolorita", "Leoncio Martinez", "Petare"],
+  "Miranda|Zamora": ["Araira", "Guatire"],
+  "La Guaira|Vargas": ["Caraballeda", "Carayaca", "Carlos Soublette", "Caruao", "Catia La Mar", "El Junko", "La Guaira", "Macuto", "Maiquetia", "Naiguata", "Urimare"],
+  "Carabobo|Valencia": ["Candelaria", "Catedral", "El Socorro", "Miguel Peña", "Negro Primero", "Rafael Urdaneta", "San Blas", "San Jose", "Santa Rosa"],
+  "Aragua|Girardot": ["Andres Eloy Blanco", "Choroni", "Joaquin Crespo", "Jose Casanova Godoy", "Las Delicias", "Los Tacarigua", "Madre Maria de San Jose", "Pedro Jose Ovalles"],
+  "Lara|Iribarren": ["Aguedo Felipe Alvarado", "Buena Vista", "Catedral", "Concepcion", "El Cuji", "Juan de Villegas", "Juarez", "Santa Rosa", "Tamaca", "Union"],
+  "Merida|Libertador": ["Antonio Spinetti Dini", "Arias", "Caracciolo Parra Perez", "Domingo Peña", "El Llano", "Gonzalo Picon Febres", "Jacinto Plaza", "Juan Rodriguez Suarez", "Lasso de la Vega", "Mariano Picon Salas", "Milla", "Osuna Rodriguez", "Sagrario"],
+  "Tachira|San Cristobal": ["Francisco Romero Lobo", "La Concordia", "Pedro Maria Morantes", "San Juan Bautista", "San Sebastian"],
+  "Trujillo|Valera": ["Juan Ignacio Montilla", "La Beatriz", "La Puerta", "Mendoza", "Mercedes Diaz", "San Luis"],
+  "Zulia|Maracaibo": ["Antonio Borjas Romero", "Bolivar", "Cacique Mara", "Caracciolo Parra Perez", "Cecilio Acosta", "Chiquinquira", "Coquivacoa", "Cristo de Aranza", "Francisco Eugenio Bustamante", "Idelfonso Vasquez", "Juana de Avila", "Luis Hurtado Higuera", "Manuel Dagnino", "Olegario Villalobos", "Raul Leoni", "Santa Lucia", "Venancio Pulgar"],
+};
+
 stateSelect.addEventListener("change", () => {
   populateMunicipalities(stateSelect.value);
+  populateParishes("", "");
+});
+
+placeSelect.addEventListener("change", () => {
+  populateParishes(stateSelect.value, placeSelect.value);
 });
 
 populateMunicipalities("");
+populateParishes("", "");
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
@@ -158,6 +185,7 @@ needForm.addEventListener("submit", (event) => {
     createdAt: new Date().toISOString(),
     state: form.get("state"),
     place: form.get("place").trim(),
+    parish: form.get("parish").trim(),
     category: form.get("category"),
     quantity: Number(form.get("quantity")),
     priority: form.get("priority"),
@@ -175,6 +203,8 @@ needForm.addEventListener("submit", (event) => {
   });
   save(STORAGE_KEYS.reports, reports);
   needForm.reset();
+  populateMunicipalities("");
+  populateParishes("", "");
   render();
   switchView("verificacion");
 });
@@ -209,7 +239,7 @@ clearPublicFilters.addEventListener("click", () => {
 nearMeButton.addEventListener("click", requestNearbyNeeds);
 
 document.querySelector("#exportCsv").addEventListener("click", () => {
-  const headers = ["id", "createdAt", "state", "place", "category", "quantity", "priority", "status", "channel", "description", "firstName", "lastName", "nationalId", "phone", "contact", "locationLink", "evidence", "verifiedBy"];
+  const headers = ["id", "createdAt", "state", "place", "parish", "category", "quantity", "priority", "status", "channel", "description", "firstName", "lastName", "nationalId", "phone", "contact", "locationLink", "evidence", "verifiedBy"];
   const rows = reports.map((report) => headers.map((key) => csvCell(report[key])).join(","));
   download("reportes_mapa_solidario.csv", [headers.join(","), ...rows].join("\n"), "text/csv");
 });
@@ -256,6 +286,33 @@ function populateMunicipalities(state) {
   placeSelect.disabled = !municipalities.length;
 }
 
+function populateParishes(state, municipality) {
+  const key = `${state}|${municipality}`;
+  const parishes = PARISHES_BY_STATE_MUNICIPALITY[key] || [];
+  parishSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = municipality ? "Seleccionar" : "Selecciona un municipio primero";
+  parishSelect.appendChild(placeholder);
+
+  parishes.forEach((parish) => {
+    const option = document.createElement("option");
+    option.value = parish;
+    option.textContent = parish;
+    parishSelect.appendChild(option);
+  });
+
+  if (municipality) {
+    const otherOption = document.createElement("option");
+    otherOption.value = "Otro / por confirmar";
+    otherOption.textContent = parishes.length ? "Otro / por confirmar" : "Parroquia o sector por confirmar";
+    parishSelect.appendChild(otherOption);
+  }
+
+  parishSelect.disabled = !municipality;
+}
+
 function renderMetrics() {
   document.querySelector("#openNeeds").textContent = reports.filter((report) => !["Entregado", "Cerrado", "Falso / duplicado"].includes(report.status)).length;
   document.querySelector("#verifiedNeeds").textContent = reports.filter((report) => report.status === "Verificado").length;
@@ -268,7 +325,7 @@ function renderVerification() {
   const status = statusFilter.value;
   const filtered = reports.filter((report) => {
     const matchesStatus = status === "Todos" || report.status === status;
-    const haystack = `${report.state} ${report.place} ${report.category} ${report.description}`.toLowerCase();
+    const haystack = `${report.state} ${report.place} ${report.parish || ""} ${report.category} ${report.description}`.toLowerCase();
     return matchesStatus && haystack.includes(search);
   });
 
@@ -287,7 +344,7 @@ function renderPublic() {
   let publicReports = reports.filter((report) => {
     const matchesStatus = ["Verificado", "En ruta", "Entregado"].includes(report.status);
     const matchesCategory = category === "Todas" || report.category === category;
-    const haystack = `${report.state} ${report.place} ${report.category} ${report.description}`.toLowerCase();
+    const haystack = `${report.state} ${report.place} ${report.parish || ""} ${report.category} ${report.description}`.toLowerCase();
     return matchesStatus && matchesCategory && haystack.includes(search);
   });
 
@@ -326,7 +383,7 @@ function renderPrivateRecord(report) {
     <article class="record">
       <div class="record-head">
         <div>
-          <h3>${escapeHtml(report.category)} en ${escapeHtml(report.place)}, ${escapeHtml(report.state)}</h3>
+          <h3>${escapeHtml(report.category)} en ${escapeHtml(locationLabel(report))}</h3>
           <p>${escapeHtml(report.description)}</p>
         </div>
         <span class="pill ${escapeHtml(report.priority)}">${escapeHtml(report.priority)}</span>
@@ -359,7 +416,7 @@ function renderPublicRecord(report) {
       <div class="record-head">
         <div>
           <h3>${escapeHtml(report.category)} - ${escapeHtml(report.state)}</h3>
-          <p>${escapeHtml(report.place)}. ${escapeHtml(publicSummary(report.description))}</p>
+          <p>${escapeHtml(locationLabel(report))}. ${escapeHtml(publicSummary(report.description))}</p>
         </div>
         <span class="pill ${escapeHtml(report.priority)}">${escapeHtml(report.priority)}</span>
       </div>
@@ -428,7 +485,7 @@ function getReportCoords(report) {
 }
 
 function approximateCoords(report) {
-  const haystack = `${report.state} ${report.place}`.toLowerCase();
+  const haystack = `${report.state} ${report.place} ${report.parish || ""}`.toLowerCase();
   const match = APPROXIMATE_COORDS.find((item) => item.match.some((term) => haystack.includes(term)));
   return match ? { lat: match.lat, lng: match.lng } : null;
 }
@@ -450,6 +507,10 @@ function toRadians(degrees) {
 
 function publicSummary(text) {
   return text.length > 135 ? `${text.slice(0, 132)}...` : text;
+}
+
+function locationLabel(report) {
+  return [report.parish, report.place, report.state].filter(Boolean).join(", ");
 }
 
 function personName(report) {
