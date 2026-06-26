@@ -88,6 +88,8 @@ const publicCategoryFilter = document.querySelector("#publicCategoryFilter");
 const nearMeButton = document.querySelector("#nearMeButton");
 const clearPublicFilters = document.querySelector("#clearPublicFilters");
 const geoStatus = document.querySelector("#geoStatus");
+const stateSelect = document.querySelector("#stateSelect");
+const placeSelect = document.querySelector("#placeSelect");
 
 const APPROXIMATE_COORDS = [
   { match: ["distrito capital", "caracas", "la candelaria"], lat: 10.5061, lng: -66.9146 },
@@ -102,6 +104,39 @@ const APPROXIMATE_COORDS = [
   { match: ["tachira", "san cristobal"], lat: 7.7669, lng: -72.2250 },
   { match: ["trujillo"], lat: 9.3658, lng: -70.4369 },
 ];
+
+const MUNICIPALITIES_BY_STATE = {
+  Amazonas: ["Alto Orinoco", "Atabapo", "Atures", "Autana", "Manapiare", "Maroa", "Rio Negro"],
+  Anzoategui: ["Anaco", "Aragua", "Bolivar", "Bruzual", "Cajigal", "Carvajal", "Freites", "Guanipa", "Guanta", "Independencia", "Libertad", "McGregor", "Miranda", "Monagas", "Penalver", "Piritu", "San Juan de Capistrano", "Santa Ana", "Simon Rodriguez", "Sotillo", "Urbaneja"],
+  Apure: ["Achaguas", "Biruaca", "Munoz", "Paez", "Pedro Camejo", "Romulo Gallegos", "San Fernando"],
+  Aragua: ["Bolivar", "Camatagua", "Francisco Linares Alcantara", "Girardot", "Jose Angel Lamas", "Jose Felix Ribas", "Jose Rafael Revenga", "Libertador", "Mario Briceno Iragorry", "Ocumare de la Costa de Oro", "San Casimiro", "San Sebastian", "Santiago Marino", "Santos Michelena", "Sucre", "Tovar", "Urdaneta", "Zamora"],
+  Barinas: ["Alberto Arvelo Torrealba", "Andres Eloy Blanco", "Antonio Jose de Sucre", "Arismendi", "Barinas", "Bolivar", "Cruz Paredes", "Ezequiel Zamora", "Obispos", "Pedraza", "Rojas", "Sosa"],
+  Bolivar: ["Angostura", "Caroni", "Cedeno", "El Callao", "Gran Sabana", "Heres", "Piar", "Roscio", "Sifontes", "Sucre"],
+  Carabobo: ["Bejuma", "Carlos Arvelo", "Diego Ibarra", "Guacara", "Juan Jose Mora", "Libertador", "Los Guayos", "Miranda", "Montalban", "Naguanagua", "Puerto Cabello", "San Diego", "San Joaquin", "Valencia"],
+  Cojedes: ["Anzoategui", "Falcon", "Girardot", "Lima Blanco", "Pao de San Juan Bautista", "Ricaurte", "Romulo Gallegos", "San Carlos", "Tinaco"],
+  "Delta Amacuro": ["Antonio Diaz", "Casacoima", "Pedernales", "Tucupita"],
+  "Distrito Capital": ["Libertador"],
+  Falcon: ["Acosta", "Bolivar", "Buchivacoa", "Cacique Manaure", "Carirubana", "Colina", "Dabajuro", "Democracia", "Falcon", "Federacion", "Jacura", "Los Taques", "Mauroa", "Miranda", "Monseñor Iturriza", "Palmasola", "Petit", "Piritu", "San Francisco", "Silva", "Sucre", "Tocopero", "Union", "Urumaco", "Zamora"],
+  Guarico: ["Camaguan", "Chaguaramas", "El Socorro", "Francisco de Miranda", "Jose Felix Ribas", "Jose Tadeo Monagas", "Juan German Roscio", "Julian Mellado", "Las Mercedes", "Leonardo Infante", "Ortiz", "Pedro Zaraza", "San Geronimo de Guayabal", "San Jose de Guaribe", "Santa Maria de Ipire"],
+  "La Guaira": ["Vargas"],
+  Lara: ["Andres Eloy Blanco", "Crespo", "Iribarren", "Jimenez", "Moran", "Palavecino", "Simon Planas", "Torres", "Urdaneta"],
+  Merida: ["Alberto Adriani", "Andres Bello", "Antonio Pinto Salinas", "Aricagua", "Arzobispo Chacon", "Campo Elias", "Caracciolo Parra Olmedo", "Cardenal Quintero", "Guaraque", "Julio Cesar Salas", "Justo Briceno", "Libertador", "Miranda", "Obispo Ramos de Lora", "Padre Noguera", "Pueblo Llano", "Rangel", "Rivas Davila", "Santos Marquina", "Sucre", "Tovar", "Tulio Febres Cordero", "Zea"],
+  Miranda: ["Acevedo", "Andres Bello", "Baruta", "Brion", "Buroz", "Carrizal", "Chacao", "Cristobal Rojas", "El Hatillo", "Guaicaipuro", "Independencia", "Lander", "Los Salias", "Paez", "Paz Castillo", "Pedro Gual", "Plaza", "Simon Bolivar", "Sucre", "Urdaneta", "Zamora"],
+  Monagas: ["Acosta", "Aguasay", "Bolivar", "Caripe", "Cedeno", "Ezequiel Zamora", "Libertador", "Maturin", "Piar", "Punceres", "Santa Barbara", "Sotillo", "Uracoa"],
+  "Nueva Esparta": ["Antolin del Campo", "Arismendi", "Diaz", "Garcia", "Gomez", "Maneiro", "Marcano", "Marino", "Peninsula de Macanao", "Tubores", "Villalba"],
+  Portuguesa: ["Agua Blanca", "Araure", "Esteller", "Guanare", "Guanarito", "Monseñor Jose Vicente de Unda", "Ospino", "Paez", "Papelon", "San Genaro de Boconoito", "San Rafael de Onoto", "Santa Rosalia", "Sucre", "Turen"],
+  Sucre: ["Andres Eloy Blanco", "Andres Mata", "Arismendi", "Benitez", "Bermudez", "Bolivar", "Cajigal", "Cruz Salmeron Acosta", "Libertador", "Marino", "Mejia", "Montes", "Ribero", "Sucre", "Valdez"],
+  Tachira: ["Andres Bello", "Antonio Romulo Costa", "Ayacucho", "Bolivar", "Cardenas", "Cordoba", "Fernandez Feo", "Francisco de Miranda", "Garcia de Hevia", "Guasimos", "Independencia", "Jauregui", "Jose Maria Vargas", "Junin", "Libertad", "Libertador", "Lobatera", "Michelena", "Panamericano", "Pedro Maria Ureña", "Rafael Urdaneta", "Samuel Dario Maldonado", "San Cristobal", "Seboruco", "Simon Rodriguez", "Sucre", "Torbes", "Uribante"],
+  Trujillo: ["Andres Bello", "Bocono", "Bolivar", "Candelaria", "Carache", "Escuque", "Jose Felipe Marquez Cañizales", "Juan Vicente Campo Elias", "La Ceiba", "Miranda", "Monte Carmelo", "Motatan", "Pampan", "Pampanito", "Rafael Rangel", "San Rafael de Carvajal", "Sucre", "Trujillo", "Urdaneta", "Valera"],
+  Yaracuy: ["Aristides Bastidas", "Bolivar", "Bruzual", "Cocorote", "Independencia", "Jose Antonio Paez", "La Trinidad", "Manuel Monge", "Nirgua", "Peña", "San Felipe", "Sucre", "Urachiche", "Veroes"],
+  Zulia: ["Almirante Padilla", "Baralt", "Cabimas", "Catatumbo", "Colon", "Francisco Javier Pulgar", "Guajira", "Jesus Enrique Lossada", "Jesus Maria Semprun", "La Cañada de Urdaneta", "Lagunillas", "Machiques de Perija", "Mara", "Maracaibo", "Miranda", "Rosario de Perija", "San Francisco", "Santa Rita", "Simon Bolivar", "Sucre", "Valmore Rodriguez"],
+};
+
+stateSelect.addEventListener("change", () => {
+  populateMunicipalities(stateSelect.value);
+});
+
+populateMunicipalities("");
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
@@ -193,6 +228,32 @@ function render() {
   renderVerification();
   renderPublic();
   renderResources();
+}
+
+function populateMunicipalities(state) {
+  const municipalities = MUNICIPALITIES_BY_STATE[state] || [];
+  placeSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = municipalities.length ? "Seleccionar" : "Selecciona un estado primero";
+  placeSelect.appendChild(placeholder);
+
+  municipalities.forEach((municipality) => {
+    const option = document.createElement("option");
+    option.value = municipality;
+    option.textContent = municipality;
+    placeSelect.appendChild(option);
+  });
+
+  const otherOption = document.createElement("option");
+  otherOption.value = "Otro / por confirmar";
+  otherOption.textContent = "Otro / por confirmar";
+  if (municipalities.length) {
+    placeSelect.appendChild(otherOption);
+  }
+
+  placeSelect.disabled = !municipalities.length;
 }
 
 function renderMetrics() {
