@@ -1,0 +1,412 @@
+const STORAGE_KEYS = {
+  reports: "msv24j_reports",
+  resources: "msv24j_resources",
+};
+
+const seedReports = [
+  {
+    id: "R-2401",
+    createdAt: new Date().toISOString(),
+    state: "Distrito Capital",
+    place: "La Candelaria",
+    category: "Agua",
+    quantity: 80,
+    priority: "Alta",
+    description: "Edificio con adultos mayores sin suministro. Se requiere agua potable para 24 horas.",
+    contact: "Contacto interno pendiente",
+    channel: "WhatsApp",
+    status: "En verificacion",
+    evidence: "Mensaje reenviado, falta llamada.",
+    verifiedBy: "",
+    lat: 10.5061,
+    lng: -66.9146,
+  },
+  {
+    id: "R-2402",
+    createdAt: new Date().toISOString(),
+    state: "Miranda",
+    place: "Guarenas",
+    category: "Medicinas",
+    quantity: 12,
+    priority: "Alta",
+    description: "Pacientes cronicos requieren antihipertensivos e insulina. Confirmado por voluntario local.",
+    contact: "Coordinacion medica interna",
+    channel: "Llamada",
+    status: "Verificado",
+    evidence: "Llamada + foto de lista medica.",
+    verifiedBy: "Voluntario local",
+    lat: 10.4703,
+    lng: -66.6193,
+  },
+];
+
+const seedResources = [
+  {
+    id: "O-1001",
+    type: "Inventario",
+    item: "120 botellas de agua",
+    location: "Chacao",
+    owner: "Centro de acopio interno",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "O-1002",
+    type: "Transporte",
+    item: "Camioneta disponible despues de las 15:00",
+    location: "Los Dos Caminos",
+    owner: "Chofer voluntario",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+let reports = load(STORAGE_KEYS.reports, seedReports);
+let resources = load(STORAGE_KEYS.resources, seedResources);
+let selectedChannel = "Google Forms";
+let userLocation = null;
+
+const tabs = document.querySelectorAll(".tab");
+const views = document.querySelectorAll(".view");
+const needForm = document.querySelector("#needForm");
+const resourceForm = document.querySelector("#resourceForm");
+const verificationList = document.querySelector("#verificationList");
+const publicList = document.querySelector("#publicList");
+const resourceList = document.querySelector("#resourceList");
+const searchInput = document.querySelector("#searchInput");
+const statusFilter = document.querySelector("#statusFilter");
+const publicSearchInput = document.querySelector("#publicSearchInput");
+const publicCategoryFilter = document.querySelector("#publicCategoryFilter");
+const nearMeButton = document.querySelector("#nearMeButton");
+const clearPublicFilters = document.querySelector("#clearPublicFilters");
+const geoStatus = document.querySelector("#geoStatus");
+
+const APPROXIMATE_COORDS = [
+  { match: ["distrito capital", "caracas", "la candelaria"], lat: 10.5061, lng: -66.9146 },
+  { match: ["miranda", "guarenas"], lat: 10.4703, lng: -66.6193 },
+  { match: ["chacao", "los palos grandes", "los dos caminos"], lat: 10.4996, lng: -66.8522 },
+  { match: ["la guaira", "macuto"], lat: 10.6016, lng: -66.8953 },
+  { match: ["carabobo", "valencia"], lat: 10.1621, lng: -68.0077 },
+  { match: ["aragua", "maracay"], lat: 10.2469, lng: -67.5958 },
+  { match: ["lara", "barquisimeto"], lat: 10.0678, lng: -69.3474 },
+  { match: ["zulia", "maracaibo"], lat: 10.6427, lng: -71.6125 },
+  { match: ["merida"], lat: 8.5897, lng: -71.1561 },
+  { match: ["tachira", "san cristobal"], lat: 7.7669, lng: -72.2250 },
+  { match: ["trujillo"], lat: 9.3658, lng: -70.4369 },
+];
+
+tabs.forEach((tab) => {
+  tab.addEventListener("click", () => switchView(tab.dataset.view));
+});
+
+document.querySelectorAll("[data-channel]").forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedChannel = button.dataset.channel;
+    document.querySelectorAll("[data-channel]").forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+  });
+});
+
+needForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(needForm);
+  reports.unshift({
+    id: `R-${Date.now().toString().slice(-6)}`,
+    createdAt: new Date().toISOString(),
+    state: form.get("state"),
+    place: form.get("place").trim(),
+    category: form.get("category"),
+    quantity: Number(form.get("quantity")),
+    priority: form.get("priority"),
+    description: form.get("description").trim(),
+    contact: form.get("contact").trim(),
+    channel: selectedChannel,
+    status: "Recibido",
+    evidence: "Sin verificacion todavia.",
+    verifiedBy: "",
+  });
+  save(STORAGE_KEYS.reports, reports);
+  needForm.reset();
+  render();
+  switchView("verificacion");
+});
+
+resourceForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(resourceForm);
+  resources.unshift({
+    id: `O-${Date.now().toString().slice(-6)}`,
+    type: form.get("type"),
+    item: form.get("item").trim(),
+    location: form.get("location").trim(),
+    owner: form.get("owner").trim(),
+    createdAt: new Date().toISOString(),
+  });
+  save(STORAGE_KEYS.resources, resources);
+  resourceForm.reset();
+  render();
+});
+
+searchInput.addEventListener("input", renderVerification);
+statusFilter.addEventListener("change", renderVerification);
+publicSearchInput.addEventListener("input", renderPublic);
+publicCategoryFilter.addEventListener("change", renderPublic);
+clearPublicFilters.addEventListener("click", () => {
+  publicSearchInput.value = "";
+  publicCategoryFilter.value = "Todas";
+  userLocation = null;
+  geoStatus.textContent = "La ubicacion es opcional. Solo se usa en este navegador para ordenar resultados cercanos.";
+  renderPublic();
+});
+nearMeButton.addEventListener("click", requestNearbyNeeds);
+
+document.querySelector("#exportCsv").addEventListener("click", () => {
+  const headers = ["id", "createdAt", "state", "place", "category", "quantity", "priority", "status", "channel", "description", "evidence", "verifiedBy"];
+  const rows = reports.map((report) => headers.map((key) => csvCell(report[key])).join(","));
+  download("reportes_mapa_solidario.csv", [headers.join(","), ...rows].join("\n"), "text/csv");
+});
+
+document.querySelector("#exportJson").addEventListener("click", () => {
+  download("reportes_mapa_solidario.json", JSON.stringify({ reports, resources }, null, 2), "application/json");
+});
+
+function switchView(viewId) {
+  tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
+  views.forEach((view) => view.classList.toggle("active", view.id === viewId));
+}
+
+function render() {
+  renderMetrics();
+  renderVerification();
+  renderPublic();
+  renderResources();
+}
+
+function renderMetrics() {
+  document.querySelector("#openNeeds").textContent = reports.filter((report) => !["Entregado", "Cerrado", "Falso / duplicado"].includes(report.status)).length;
+  document.querySelector("#verifiedNeeds").textContent = reports.filter((report) => report.status === "Verificado").length;
+  document.querySelector("#inTransitNeeds").textContent = reports.filter((report) => report.status === "En ruta").length;
+  document.querySelector("#deliveredNeeds").textContent = reports.filter((report) => report.status === "Entregado").length;
+}
+
+function renderVerification() {
+  const search = searchInput.value.trim().toLowerCase();
+  const status = statusFilter.value;
+  const filtered = reports.filter((report) => {
+    const matchesStatus = status === "Todos" || report.status === status;
+    const haystack = `${report.state} ${report.place} ${report.category} ${report.description}`.toLowerCase();
+    return matchesStatus && haystack.includes(search);
+  });
+
+  verificationList.innerHTML = filtered.length
+    ? filtered.map(renderPrivateRecord).join("")
+    : `<div class="empty">No hay reportes con ese filtro.</div>`;
+
+  verificationList.querySelectorAll("[data-status]").forEach((button) => {
+    button.addEventListener("click", () => updateStatus(button.dataset.id, button.dataset.status));
+  });
+}
+
+function renderPublic() {
+  const search = publicSearchInput.value.trim().toLowerCase();
+  const category = publicCategoryFilter.value;
+  let publicReports = reports.filter((report) => {
+    const matchesStatus = ["Verificado", "En ruta", "Entregado"].includes(report.status);
+    const matchesCategory = category === "Todas" || report.category === category;
+    const haystack = `${report.state} ${report.place} ${report.category} ${report.description}`.toLowerCase();
+    return matchesStatus && matchesCategory && haystack.includes(search);
+  });
+
+  if (userLocation) {
+    publicReports = publicReports
+      .map((report) => addDistance(report, userLocation))
+      .sort((left, right) => (left.distanceKm || 99999) - (right.distanceKm || 99999));
+  }
+
+  publicList.innerHTML = publicReports.length
+    ? publicReports.map(renderPublicRecord).join("")
+    : `<div class="empty">Todavia no hay necesidades verificadas para publicar.</div>`;
+}
+
+function renderResources() {
+  resourceList.innerHTML = resources.length
+    ? resources.map((resource) => `
+      <article class="record">
+        <div class="record-head">
+          <div>
+            <h3>${escapeHtml(resource.item)}</h3>
+            <p>${escapeHtml(resource.location)}</p>
+          </div>
+          <span class="pill">${escapeHtml(resource.type)}</span>
+        </div>
+        <div class="meta">
+          <span class="pill">Interno: ${escapeHtml(resource.owner)}</span>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">No hay recursos registrados.</div>`;
+}
+
+function renderPrivateRecord(report) {
+  return `
+    <article class="record">
+      <div class="record-head">
+        <div>
+          <h3>${escapeHtml(report.category)} en ${escapeHtml(report.place)}, ${escapeHtml(report.state)}</h3>
+          <p>${escapeHtml(report.description)}</p>
+        </div>
+        <span class="pill ${escapeHtml(report.priority)}">${escapeHtml(report.priority)}</span>
+      </div>
+      <div class="meta">
+        <span class="pill">${escapeHtml(report.id)}</span>
+        <span class="pill">${escapeHtml(report.status)}</span>
+        <span class="pill">${escapeHtml(report.channel)}</span>
+        <span class="pill">Cantidad: ${escapeHtml(report.quantity)}</span>
+      </div>
+      <p><strong>Evidencia:</strong> ${escapeHtml(report.evidence)}</p>
+      <p><strong>Verificador interno:</strong> ${escapeHtml(report.verifiedBy || "Pendiente por asignar")}</p>
+      <p><strong>Contacto interno:</strong> ${escapeHtml(report.contact)}</p>
+      <div class="record-actions">
+        ${["Recibido", "En verificacion", "Verificado", "Asignado", "En ruta", "Entregado", "Cerrado", "Falso / duplicado"].map((status) => `
+          <button data-id="${escapeHtml(report.id)}" data-status="${status}">${status}</button>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderPublicRecord(report) {
+  return `
+    <article class="record">
+      <div class="record-head">
+        <div>
+          <h3>${escapeHtml(report.category)} - ${escapeHtml(report.state)}</h3>
+          <p>${escapeHtml(report.place)}. ${escapeHtml(publicSummary(report.description))}</p>
+        </div>
+        <span class="pill ${escapeHtml(report.priority)}">${escapeHtml(report.priority)}</span>
+      </div>
+      <div class="meta">
+        <span class="pill">${escapeHtml(report.status)}</span>
+        <span class="pill">Cantidad: ${escapeHtml(report.quantity)}</span>
+        ${report.distanceKm ? `<span class="pill">Aprox. ${escapeHtml(Math.round(report.distanceKm))} km</span>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function updateStatus(id, status) {
+  reports = reports.map((report) => {
+    if (report.id !== id) {
+      return report;
+    }
+    const coords = approximateCoords(report);
+    return { ...report, ...coords, status };
+  });
+  save(STORAGE_KEYS.reports, reports);
+  render();
+}
+
+function requestNearbyNeeds() {
+  if (!navigator.geolocation) {
+    geoStatus.textContent = "Este navegador no permite geolocalizacion. Puedes buscar manualmente por estado o municipio.";
+    return;
+  }
+
+  geoStatus.textContent = "Pidiendo permiso de ubicacion...";
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+      geoStatus.textContent = "Resultados ordenados por cercania aproximada. Tu ubicacion no se guarda.";
+      renderPublic();
+    },
+    () => {
+      userLocation = null;
+      geoStatus.textContent = "No se uso ubicacion. Puedes buscar manualmente por estado o municipio.";
+      renderPublic();
+    },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+  );
+}
+
+function addDistance(report, location) {
+  const coords = getReportCoords(report);
+  if (!coords) {
+    return report;
+  }
+  return {
+    ...report,
+    distanceKm: distanceKm(location.lat, location.lng, coords.lat, coords.lng),
+  };
+}
+
+function getReportCoords(report) {
+  if (typeof report.lat === "number" && typeof report.lng === "number") {
+    return { lat: report.lat, lng: report.lng };
+  }
+  return approximateCoords(report);
+}
+
+function approximateCoords(report) {
+  const haystack = `${report.state} ${report.place}`.toLowerCase();
+  const match = APPROXIMATE_COORDS.find((item) => item.match.some((term) => haystack.includes(term)));
+  return match ? { lat: match.lat, lng: match.lng } : null;
+}
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toRadians(degrees) {
+  return degrees * Math.PI / 180;
+}
+
+function publicSummary(text) {
+  return text.length > 135 ? `${text.slice(0, 132)}...` : text;
+}
+
+function load(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function save(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  const safeValue = value == null ? "" : value;
+  return `"${String(safeValue).split('"').join('""')}"`;
+}
+
+function escapeHtml(value) {
+  const safeValue = value == null ? "" : value;
+  return String(safeValue)
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#039;");
+}
+
+render();

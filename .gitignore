@@ -1,0 +1,8 @@
+.agents/
+.codex/
+OCR_A_Mano/
+.DS_Store
+*.db
+*.sqlite
+*.sqlite3
+*.csv

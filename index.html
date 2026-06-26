@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mapa Solidario Venezuela 24J</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Emergencia ciudadana</p>
+        <h1>Mapa Solidario Venezuela 24J</h1>
+      </div>
+      <nav class="tabs" aria-label="Secciones">
+        <button class="tab active" data-view="reportes">Reportes</button>
+        <button class="tab" data-view="verificacion">Verificacion</button>
+        <button class="tab" data-view="publico">Vista publica</button>
+        <button class="tab" data-view="recursos">Recursos</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="summary-grid" aria-label="Resumen operativo">
+        <article class="metric urgent">
+          <span class="metric-label">Necesidades abiertas</span>
+          <strong id="openNeeds">0</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Verificadas</span>
+          <strong id="verifiedNeeds">0</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-label">En ruta</span>
+          <strong id="inTransitNeeds">0</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Entregadas</span>
+          <strong id="deliveredNeeds">0</strong>
+        </article>
+      </section>
+
+      <section class="view active" id="reportes">
+        <div class="panel-grid">
+          <form id="needForm" class="panel form-panel">
+            <div class="section-head">
+              <h2>Nuevo reporte</h2>
+              <p>Registra solo lo necesario. Los datos personales no se publican.</p>
+            </div>
+
+            <label>
+              Estado
+              <select name="state" required>
+                <option value="">Seleccionar</option>
+                <option>Distrito Capital</option>
+                <option>Miranda</option>
+                <option>La Guaira</option>
+                <option>Aragua</option>
+                <option>Carabobo</option>
+                <option>Lara</option>
+                <option>Zulia</option>
+                <option>Merida</option>
+                <option>Tachira</option>
+                <option>Trujillo</option>
+                <option>Otro</option>
+              </select>
+            </label>
+
+            <label>
+              Municipio / parroquia / sector
+              <input name="place" autocomplete="address-level3" required placeholder="Ej. Chacao, La Candelaria, Macuto">
+            </label>
+
+            <label>
+              Tipo de necesidad
+              <select name="category" required>
+                <option>Agua</option>
+                <option>Alimentos</option>
+                <option>Medicinas</option>
+                <option>Atencion medica</option>
+                <option>Refugio</option>
+                <option>Higiene</option>
+                <option>Rescate</option>
+                <option>Transporte</option>
+                <option>Energia</option>
+                <option>Telecomunicaciones</option>
+                <option>Insumos para bebes</option>
+                <option>Adultos mayores</option>
+                <option>Mascotas</option>
+                <option>Remocion de escombros</option>
+                <option>Herramientas</option>
+                <option>Otro</option>
+              </select>
+            </label>
+
+            <div class="two-cols">
+              <label>
+                Cantidad
+                <input name="quantity" type="number" min="1" value="1" required>
+              </label>
+              <label>
+                Prioridad
+                <select name="priority" required>
+                  <option value="Critica">Critica</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Media</option>
+                  <option value="Resuelta">Resuelta</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Descripcion verificable
+              <textarea name="description" rows="4" required placeholder="Que se necesita, para cuantas personas, y como se puede verificar."></textarea>
+            </label>
+
+            <label>
+              Contacto interno
+              <input name="contact" required placeholder="Telefono, WhatsApp, radio o responsable local">
+            </label>
+
+            <button class="primary-action" type="submit">Crear reporte</button>
+          </form>
+
+          <aside class="panel intake-panel">
+            <div class="section-head">
+              <h2>Canales de entrada</h2>
+              <p>Convierte mensajes dispersos en reportes verificables.</p>
+            </div>
+            <div class="channel-list">
+              <button data-channel="WhatsApp">WhatsApp</button>
+              <button data-channel="Google Forms">Google Forms</button>
+              <button data-channel="Instagram">Instagram</button>
+              <button data-channel="X / Twitter">X / Twitter</button>
+              <button data-channel="Llamada">Llamada</button>
+              <button data-channel="Formulario">Formulario</button>
+            </div>
+            <div class="privacy-note">
+              <strong>Regla de privacidad</strong>
+              <p>La vista publica agrupa por zona y necesidad. Nunca muestra nombres, telefonos ni direcciones exactas.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="verificacion">
+        <div class="section-head">
+          <h2>Cola de verificacion</h2>
+          <p>Solo voluntarios seleccionados deberian confirmar, descartar o enviar reportes a la base compartida.</p>
+        </div>
+        <div class="toolbar">
+          <input id="searchInput" placeholder="Buscar por zona, categoria o descripcion">
+          <select id="statusFilter">
+            <option value="Todos">Todos</option>
+            <option>Recibido</option>
+            <option>En verificacion</option>
+            <option>Verificado</option>
+            <option>Asignado</option>
+            <option>En ruta</option>
+            <option>Entregado</option>
+            <option>Cerrado</option>
+            <option>Falso / duplicado</option>
+          </select>
+          <button id="exportCsv">Exportar CSV</button>
+          <button id="exportJson">Exportar JSON</button>
+        </div>
+        <div id="verificationList" class="records"></div>
+      </section>
+
+      <section class="view" id="publico">
+        <div class="public-layout">
+          <div class="map-panel">
+            <div class="venezuela-map" aria-label="Mapa agregado de necesidades verificadas">
+              <svg class="map-svg" viewBox="0 0 820 480" role="img" aria-label="Mapa esquematico de Venezuela">
+                <path class="map-country" d="M72 250 L132 205 L213 158 L332 145 L443 132 L557 139 L635 174 L748 188 L684 224 L609 280 L483 296 L361 304 L252 283 L151 292 Z"></path>
+                <path class="map-region-line" d="M213 158 L252 283"></path>
+                <path class="map-region-line" d="M332 145 L361 304"></path>
+                <path class="map-region-line" d="M443 132 L483 296"></path>
+                <path class="map-region-line" d="M557 139 L609 280"></path>
+                <g class="map-marker" transform="translate(440 173)">
+                  <circle r="16"></circle>
+                  <circle r="7"></circle>
+                  <text x="22" y="5">Caracas</text>
+                </g>
+                <g class="map-marker" transform="translate(375 217)">
+                  <circle r="16"></circle>
+                  <circle r="7"></circle>
+                  <text x="22" y="5">Centro</text>
+                </g>
+                <g class="map-marker" transform="translate(205 234)">
+                  <circle r="16"></circle>
+                  <circle r="7"></circle>
+                  <text x="22" y="5">Occidente</text>
+                </g>
+                <g class="map-marker" transform="translate(168 295)">
+                  <circle r="16"></circle>
+                  <circle r="7"></circle>
+                  <text x="22" y="5">Andes</text>
+                </g>
+                <g class="map-marker" transform="translate(700 228)">
+                  <circle r="16"></circle>
+                  <circle r="7"></circle>
+                  <text x="22" y="5">Oriente</text>
+                </g>
+              </svg>
+              <p class="map-caption">Mapa referencial. Las ubicaciones publicas son aproximadas para proteger a las personas afectadas.</p>
+            </div>
+          </div>
+          <div>
+            <div class="section-head">
+              <h2>Necesidades publicables</h2>
+              <p>Solo reportes verificados o en ruta, sin datos sensibles ni ubicaciones exactas.</p>
+            </div>
+            <div class="public-tools" aria-label="Busqueda publica">
+              <input id="publicSearchInput" placeholder="Buscar por estado, municipio o necesidad">
+              <select id="publicCategoryFilter">
+                <option value="Todas">Todas las necesidades</option>
+                <option>Agua</option>
+                <option>Alimentos</option>
+                <option>Medicinas</option>
+                <option>Atencion medica</option>
+                <option>Refugio</option>
+                <option>Higiene</option>
+                <option>Rescate</option>
+                <option>Transporte</option>
+                <option>Energia</option>
+                <option>Telecomunicaciones</option>
+                <option>Insumos para bebes</option>
+                <option>Adultos mayores</option>
+                <option>Mascotas</option>
+                <option>Remocion de escombros</option>
+                <option>Otro</option>
+              </select>
+              <button id="nearMeButton" type="button">Ver necesidades cerca de mi</button>
+              <button id="clearPublicFilters" type="button">Limpiar</button>
+            </div>
+            <p id="geoStatus" class="geo-status">La ubicacion es opcional. Solo se usa en este navegador para ordenar resultados cercanos.</p>
+            <div id="publicList" class="records compact"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="recursos">
+        <div class="resources-grid">
+          <form id="resourceForm" class="panel">
+            <div class="section-head">
+              <h2>Inventario y transporte</h2>
+              <p>Registra ofertas listas para asignar.</p>
+            </div>
+            <label>
+              Tipo
+              <select name="type">
+                <option>Inventario</option>
+                <option>Centro de acopio</option>
+                <option>Transporte</option>
+                <option>Voluntariado</option>
+              </select>
+            </label>
+            <label>
+              Recurso
+              <input name="item" required placeholder="Ej. 200 botellas de agua, camioneta, medico">
+            </label>
+            <label>
+              Ubicacion
+              <input name="location" required placeholder="Ej. Los Palos Grandes, Valencia">
+            </label>
+            <label>
+              Contacto interno
+              <input name="owner" required placeholder="Responsable / telefono">
+            </label>
+            <button class="primary-action" type="submit">Agregar recurso</button>
+          </form>
+          <div class="panel">
+            <div class="section-head">
+              <h2>Recursos disponibles</h2>
+              <p>Asignacion manual durante el MVP.</p>
+            </div>
+            <div id="resourceList" class="records compact"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
