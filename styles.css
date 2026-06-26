@@ -369,6 +369,43 @@ textarea {
   margin-bottom: 14px;
 }
 
+.public-report-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid #bfe3d0;
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+  background: #edf8f2;
+  margin-bottom: 14px;
+  padding: 13px 14px;
+}
+
+.public-report-box h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.public-report-box p {
+  color: #335448;
+  margin: 0;
+}
+
+.whatsapp-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 10px 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .venezuela-map {
   position: relative;
   min-height: 430px;
@@ -460,6 +497,15 @@ textarea {
 
   .venezuela-map {
     min-height: 320px;
+  }
+
+  .public-report-box {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .whatsapp-action {
+    width: 100%;
   }
 }
 
