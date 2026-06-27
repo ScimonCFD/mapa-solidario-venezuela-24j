@@ -71,8 +71,10 @@ const seedResources = [
   },
 ];
 
-let reports = load(STORAGE_KEYS.reports, seedReports);
-let resources = load(STORAGE_KEYS.resources, seedResources);
+const dataProvider = createLocalStorageDataProvider();
+
+let reports = dataProvider.listReports();
+let resources = dataProvider.listResources();
 let selectedChannel = "Google Forms";
 let userLocation = null;
 
@@ -2333,7 +2335,7 @@ document.querySelectorAll("[data-channel]").forEach((button) => {
 needForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(needForm);
-  reports.unshift({
+  reports = dataProvider.createReport({
     id: `R-${Date.now().toString().slice(-6)}`,
     createdAt: new Date().toISOString(),
     state: form.get("state"),
@@ -2354,7 +2356,6 @@ needForm.addEventListener("submit", (event) => {
     evidence: "Sin verificacion todavia.",
     verifiedBy: "",
   });
-  save(STORAGE_KEYS.reports, reports);
   needForm.reset();
   populateMunicipalities("");
   populateParishes("", "");
@@ -2365,7 +2366,7 @@ needForm.addEventListener("submit", (event) => {
 resourceForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(resourceForm);
-  resources.unshift({
+  resources = dataProvider.createResource({
     id: `O-${Date.now().toString().slice(-6)}`,
     type: form.get("type"),
     item: form.get("item").trim(),
@@ -2373,7 +2374,6 @@ resourceForm.addEventListener("submit", (event) => {
     owner: form.get("owner").trim(),
     createdAt: new Date().toISOString(),
   });
-  save(STORAGE_KEYS.resources, resources);
   resourceForm.reset();
   render();
 });
@@ -2586,16 +2586,14 @@ function renderPublicRecord(report) {
 }
 
 function updateStatus(id, status) {
-  let updatedReport = null;
-  reports = reports.map((report) => {
-    if (report.id !== id) {
-      return report;
-    }
-    const coords = approximateCoords(report);
-    updatedReport = { ...report, ...coords, status };
-    return updatedReport;
-  });
-  save(STORAGE_KEYS.reports, reports);
+  const report = reports.find((item) => item.id === id);
+  if (!report) {
+    return;
+  }
+
+  const coords = approximateCoords(report);
+  const updatedReport = { ...report, ...coords, status };
+  reports = dataProvider.updateReport(id, updatedReport);
   if (updatedReport) {
     const publicMessage = ["Verificado", "En ruta", "Entregado"].includes(status)
       ? " Ya aparece en la vista publica."
@@ -2698,6 +2696,34 @@ function renderLocationLink(value) {
     return `<a href="${safeValue}" target="_blank" rel="noopener noreferrer">Abrir ubicacion</a>`;
   }
   return safeValue;
+}
+
+function createLocalStorageDataProvider() {
+  return {
+    listReports() {
+      return load(STORAGE_KEYS.reports, seedReports);
+    },
+    createReport(report) {
+      const nextReports = [report, ...this.listReports()];
+      save(STORAGE_KEYS.reports, nextReports);
+      return nextReports;
+    },
+    updateReport(id, updatedReport) {
+      const nextReports = this.listReports().map((report) => (
+        report.id === id ? updatedReport : report
+      ));
+      save(STORAGE_KEYS.reports, nextReports);
+      return nextReports;
+    },
+    listResources() {
+      return load(STORAGE_KEYS.resources, seedResources);
+    },
+    createResource(resource) {
+      const nextResources = [resource, ...this.listResources()];
+      save(STORAGE_KEYS.resources, nextResources);
+      return nextResources;
+    },
+  };
 }
 
 function load(key, fallback) {
